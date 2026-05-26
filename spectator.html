@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>A Liar Within — Espectador</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    #spectator-join {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.95);
+      display: grid;
+      place-items: center;
+      z-index: 9999;
+    }
+    .spectator-join-box {
+      background: #222;
+      padding: 30px;
+      border-radius: 12px;
+      text-align: center;
+      max-width: 400px;
+      color: #fff;
+    }
+    .spectator-join-box h2 {
+      margin-bottom: 20px;
+      color: #ff9900;
+    }
+    .spectator-join-box input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #444;
+      background: #333;
+      color: #fff;
+      font-size: 16px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+    .spectator-join-box input::placeholder {
+      color: #666;
+    }
+    .spectator-join-box button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      background: #ff4444;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .spectator-join-box button:hover {
+      background: #ff6666;
+    }
+    .spectator-join-box button:disabled {
+      background: #666;
+      cursor: not-allowed;
+    }
+    .spectator-join-box .error {
+      color: #ff6666;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    .spectator-join-box .info {
+      color: #888;
+      font-size: 12px;
+      margin-top: 15px;
+    }
+    #spectator-content {
+      display: none;
+    }
+    .spectator-header {
+      background: #111;
+      padding: 15px;
+      text-align: center;
+      border-bottom: 2px solid #ff4444;
+    }
+    .spectator-header h1 {
+      margin: 0;
+      color: #ff9900;
+      font-size: 20px;
+    }
+    .spectator-header p {
+      margin: 5px 0 0;
+      color: #ccc;
+      font-size: 12px;
+    }
+    .spectator-main {
+      padding: 20px;
+      display: grid;
+      gap: 20px;
+    }
+    .spectator-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) 320px;
+      gap: 20px;
+    }
+    .spectator-stage {
+      background: linear-gradient(180deg, #151515 0%, #1f1f1f 100%);
+      border: 1px solid #333;
+      border-radius: 16px;
+      padding: 24px;
+      min-height: 360px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+    }
+    .spectator-stage::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top, rgba(255,153,0,0.14), transparent 38%);
+      pointer-events: none;
+    }
+    .spectator-stage-title {
+      margin: 0 0 10px;
+      font-size: 28px;
+      letter-spacing: 0.06em;
+      color: #ffb347;
+      text-transform: uppercase;
+    }
+    .spectator-stage-subtitle {
+      margin: 0 0 20px;
+      font-size: 16px;
+      color: #ccc;
+      line-height: 1.5;
+    }
+    .spectator-stage-message {
+      font-size: 18px;
+      color: #f5f5f5;
+      line-height: 1.7;
+      min-height: 120px;
+    }
+    .spectator-role-panel {
+      display: none;
+      margin-top: 20px;
+      padding: 18px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      gap: 14px;
+    }
+    .spectator-role-label {
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      color: #ffb347;
+      text-transform: uppercase;
+    }
+    .spectator-role-badge {
+      padding: 14px 18px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #fff;
+      font-size: 18px;
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: 0.14em;
+    }
+    .spectator-role-description {
+      color: #ddd;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    .spectator-screen-image {
+      display: none;
+      margin-top: 24px;
+      width: 100%;
+      min-height: 220px;
+      border-radius: 18px;
+      background-size: cover;
+      background-position: center;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+    }
+    .spectator-screen-image.visible {
+      display: block;
+    }
+    .spectator-stage-extra {
+      margin-top: 20px;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      color: #ddd;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .spectator-panel {
+      background: #222;
+      padding: 15px;
+      border-radius: 10px;
+      border: 1px solid #333;
+    }
+    .spectator-panel h3 {
+      color: #ff9900;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    #spectator-players {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    #spectator-players li {
+      padding: 10px 12px;
+      background: #1c1c1c;
+      margin: 6px 0;
+      border-radius: 8px;
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    #spectator-players li.eliminated {
+      opacity: 0.55;
+      color: #999;
+      text-decoration: line-through;
+    }
+    .spectator-status-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 68px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .spectator-status-badge.alive {
+      color: #a6ff8c;
+      background: rgba(166, 255, 140, 0.12);
+    }
+    .spectator-status-badge.eliminated {
+      color: #ff7f7f;
+      background: rgba(255, 127, 127, 0.12);
+    }
+    .spectator-event {
+      min-height: 120px;
+      color: #ddd;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+    .spectator-footer {
+      display: flex;
+      gap: 12px;
+      justify-content: stretch;
+      flex-wrap: wrap;
+    }
+    .spectator-footer button {
+      flex: 1 1 120px;
+      padding: 12px 14px;
+      border: none;
+      border-radius: 10px;
+      background: #ff4444;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .spectator-footer button:hover {
+      background: #ff6666;
+    }
+  </style>
+</head>
+<body style="background:#1a1a1a;">
+  <!-- Modal de entrada -->
+  <div id="spectator-join" class="spectator-join-box" style="position:static;background:transparent;padding:0;grid-column:unset;place-items:unset;display:grid;min-height:100vh;">
+    <div class="spectator-join-box">
+      <h2>🎮 Espectador</h2>
+      <p style="color:#ccc;margin-bottom:20px;">Digite o código da sala para assistir</p>
+      
+      <input 
+        id="spectator-room-input" 
+        type="text" 
+        placeholder="Ex: ABCD1234"
+        autocomplete="off"
+        maxlength="8"
+      />
+      
+      <button id="spectator-join-btn" onclick="joinAsSpectator()">Entrar</button>
+      
+      <div class="error" id="spectator-error" style="display:none;"></div>
+      <div class="info">
+        💡 Código fornecido pelo host do jogo
+      </div>
+    </div>
+  </div>
+
+  <!-- Conteúdo do espectador -->
+  <div id="spectator-content" style="display:none;min-height:100vh;color:#fff;">
+    <div class="spectator-header">
+      <h1>🎮 A Liar Within — Espectador</h1>
+      <p>Modo: <strong>Narrador</strong> — Sala: <strong id="spectator-room-code">—</strong></p>
+    </div>
+
+    <div class="spectator-main">
+      <div class="spectator-grid">
+        <div class="spectator-stage">
+          <div class="spectator-stage-title" id="spectator-screen-title">Aguardando conexão...</div>
+          <div class="spectator-stage-subtitle" id="spectator-screen-subtitle">O espectador observa o fluxo da partida sem interagir.</div>
+          <div class="spectator-stage-message" id="spectator-screen-message">Quando o jogo começar, esta tela irá mostrar as fases e transições do jogo, como nos jogadores.</div>
+          <div class="spectator-role-panel" id="spectator-role-panel">
+            <div class="spectator-role-label">Seu papel</div>
+            <div class="spectator-role-badge" id="spectator-role-badge">NARRADOR</div>
+            <div class="spectator-role-description" id="spectator-role-description">Você observa como narrador e acompanha a partida em tempo real.</div>
+          </div>
+          <div class="spectator-screen-image" id="spectator-screen-image"></div>
+          <div class="spectator-stage-extra" id="spectator-screen-extra">Aguarde a primeira fase.</div>
+        </div>
+
+        <div>
+          <div class="spectator-panel">
+            <h3>👥 Jogadores</h3>
+            <div id="spectator-player-summary" class="spectator-stage-extra">Nenhum dado disponível ainda.</div>
+            <ul id="spectator-players"></ul>
+          </div>
+
+          <div class="spectator-panel">
+            <h3>📰 Narrativa</h3>
+            <div class="spectator-event" id="spectator-last-action">Acompanhe a ação do jogo ao vivo.</div>
+          </div>
+
+          <div class="spectator-panel">
+            <h3>📌 Detalhes</h3>
+            <div class="spectator-stage-extra" id="spectator-additional-info">Nenhuma informação adicional disponível.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="spectator-footer">
+        <button onclick="leaveSpectator()">Sair</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/12.12.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.12.1/firebase-database-compat.js"></script>
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBG4m7F2YEIPOduLGNniryltMNLXEtYnXQ",
+      authDomain: "a-liar-within-v3.firebaseapp.com",
+      databaseURL: "https://a-liar-within-v3-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "a-liar-within-v3",
+      storageBucket: "a-liar-within-v3.firebasestorage.app",
+      messagingSenderId: "170644517763",
+      appId: "1:170644517763:web:08e0a2912cfec9d460bcb6"
+    };
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let currentRoom = null;
+    let currentRoomRef = null;
+    let unsubscribe = null;
+
+    // Extrair sala da URL
+    const params = new URLSearchParams(window.location.search);
+    const roomParam = params.get('room');
+
+    // Entrar como espectador
+    window.joinAsSpectator = async function() {
+      const roomCode = document.getElementById('spectator-room-input').value.toUpperCase().trim();
+      const errorDiv = document.getElementById('spectator-error');
+      const btn = document.getElementById('spectator-join-btn');
+
+      if (!roomCode || roomCode.length < 4) {
+        errorDiv.textContent = 'Digite um código válido';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Conectando...';
+      errorDiv.style.display = 'none';
+
+      try {
+        // Verificar se sala existe
+        const roomRef = db.ref(`rooms/${roomCode}`);
+        const snapshot = await roomRef.once('value');
+
+        if (!snapshot.exists()) {
+          errorDiv.textContent = 'Sala não encontrada';
+          errorDiv.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Entrar';
+          return;
+        }
+
+        currentRoom = roomCode;
+        document.getElementById('spectator-room-code').textContent = roomCode;
+        document.getElementById('spectator-join').style.display = 'none';
+        document.getElementById('spectator-content').style.display = 'block';
+
+        // Começar a escutar a sala
+        listenToRoom(roomCode);
+      } catch (e) {
+        console.error('Erro ao conectar:', e);
+        errorDiv.textContent = 'Erro ao conectar';
+        errorDiv.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Entrar';
+      }
+    };
+
+    // Permitir Enter para enviar
+    document.getElementById('spectator-room-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') window.joinAsSpectator();
+    });
+
+    // Auto-entrar se o room for passado na querystring
+    if (roomParam) {
+      document.getElementById('spectator-room-input').value = roomParam.toUpperCase();
+      // Pequeno delay para garantir que handlers estão prontos
+      setTimeout(() => {
+        window.joinAsSpectator();
+      }, 200);
+    }
+
+    function listenToRoom(roomCode) {
+      const roomRef = db.ref(`rooms/${roomCode}`);
+      
+      if (unsubscribe && currentRoomRef) {
+        currentRoomRef.off('value', unsubscribe);
+      }
+      
+      unsubscribe = (snapshot) => {
+        const roomData = snapshot.val();
+        if (!roomData) return;
+
+        renderSpectatorView(roomData);
+      };
+
+      currentRoomRef = roomRef;
+      roomRef.on('value', unsubscribe);
+    }
+
+    function renderSpectatorView(roomData) {
+      const phase = (roomData.gameState && (roomData.gameState.phase || roomData.gameState.currentPhase)) || 'AGUARDANDO';
+      renderSpectatorPhase(phase, roomData);
+
+      const players = roomData.players || {};
+      const eliminated = roomData.eliminatedPlayers || roomData.gameState?.eliminatedPlayers || [];
+      const playersList = document.getElementById('spectator-players');
+      playersList.innerHTML = '';
+
+      const playerEntries = Object.entries(players);
+      const alivePlayers = [];
+      const eliminatedPlayers = [];
+
+      playerEntries.forEach(([playerId, player]) => {
+        const name = player?.name || playerId;
+        const isEliminated = Array.isArray(eliminated)
+          ? eliminated.includes(playerId)
+          : eliminated && eliminated[playerId];
+
+        const li = document.createElement('li');
+        li.textContent = name;
+        const badge = document.createElement('span');
+        badge.className = `spectator-status-badge ${isEliminated ? 'eliminated' : 'alive'}`;
+        badge.textContent = isEliminated ? 'Eliminado' : 'Vivo';
+        li.appendChild(badge);
+
+        if (isEliminated) {
+          li.classList.add('eliminated');
+          eliminatedPlayers.push(name);
+        } else {
+          alivePlayers.push(name);
+        }
+
+        playersList.appendChild(li);
+      });
+
+      const summary = document.getElementById('spectator-player-summary');
+      summary.textContent = `${alivePlayers.length} vivos, ${eliminatedPlayers.length} eliminados.`;
+
+      const lastAction = (roomData.gameState && roomData.gameState.lastAction) || 'Aguardando próximo evento...';
+      document.getElementById('spectator-last-action').textContent = formatLastAction(lastAction, roomData);
+
+      const additionalInfo = document.getElementById('spectator-additional-info');
+      additionalInfo.textContent = getAdditionalInfo(phase, roomData, alivePlayers.length, eliminatedPlayers.length);
+    }
+
+    function renderSpectatorPhase(phase, roomData) {
+      const title = document.getElementById('spectator-screen-title');
+      const subtitle = document.getElementById('spectator-screen-subtitle');
+      const message = document.getElementById('spectator-screen-message');
+      const extra = document.getElementById('spectator-screen-extra');
+      const rolePanel = document.getElementById('spectator-role-panel');
+      const roleBadge = document.getElementById('spectator-role-badge');
+      const roleDescription = document.getElementById('spectator-role-description');
+      const screenImage = document.getElementById('spectator-screen-image');
+
+      const phaseKey = String(phase || '').toUpperCase();
+      const showRolePanel = phaseKey === 'ROLE_REVEAL';
+      const showNightImage = phaseKey === 'NIGHT';
+
+      rolePanel.style.display = showRolePanel ? 'grid' : 'none';
+      if (showRolePanel) {
+        roleBadge.textContent = 'NARRADOR';
+        roleDescription.textContent = 'Você vê o mesmo painel de role reveal que os jogadores, mas sem interagir.';
+      }
+
+      if (showNightImage) {
+        screenImage.classList.add('visible');
+        screenImage.style.backgroundImage = "url('gameart/Night.jpeg')";
+      } else {
+        screenImage.classList.remove('visible');
+        screenImage.style.backgroundImage = '';
+      }
+
+      switch (phaseKey) {
+        case 'ROLE_REVEAL':
+          title.textContent = 'Revelação de Papéis';
+          subtitle.textContent = 'Todos os jogadores recebem seus papéis agora.';
+          message.textContent = 'O narrador acompanha o início da partida com o painel de role reveal.';
+          extra.textContent = 'Os papéis são exibidos aos jogadores. Você vê apenas o fluxo da fase.';
+          break;
+        case 'NIGHT':
+          title.textContent = 'Noite';
+          subtitle.textContent = 'A cidade dorme enquanto as forças ocultas agem.';
+          message.textContent = 'A noite começa e a tela mostra a imagem do início da fase.';
+          extra.textContent = 'Esta visão é a mesma transição que os jogadores veem, só sem ação direta.';
+          break;
+        case 'ASSASSIN_TURN':
+          title.textContent = 'Turno do Assassino';
+          subtitle.textContent = 'O Assassino escolhe sua vítima em segredo.';
+          message.textContent = 'O narrador acompanha o turno sem revelar a escolha ao público.';
+          extra.textContent = `Jogadores vivos: ${countAlivePlayers(roomData)}.`;
+          break;
+        case 'TRAITOR_TURN':
+          title.textContent = 'Turno do Traidor';
+          subtitle.textContent = 'O Traidor pode agir após o Assassino.';
+          message.textContent = 'O narrador vê a fase noturna avançar sem interação adicional.';
+          extra.textContent = 'A ação do Traidor ocorre nos bastidores do jogo.';
+          break;
+        case 'DOCTOR_TURN':
+          title.textContent = 'Turno do Médico';
+          subtitle.textContent = 'O Médico escolhe quem salvar.';
+          message.textContent = 'A escolha de cura acontece em silêncio, observada pelo narrador.';
+          extra.textContent = 'A proteção noturna é decidida, mas só será conhecida no dia seguinte.';
+          break;
+        case 'DETECTIVE_TURN':
+          title.textContent = 'Turno do Detetive';
+          subtitle.textContent = 'O Detetive investiga um jogador.';
+          message.textContent = 'O narrador acompanha a investigação sem revelar o resultado.';
+          extra.textContent = 'A investigação acontece em sigilo até o momento certo.';
+          break;
+        case 'DAY':
+          title.textContent = 'Dia / Discussão';
+          subtitle.textContent = 'A cidade acorda para debater e suspeitar.';
+          message.textContent = 'Os jogadores discutem e se preparam para votar.';
+          extra.textContent = `Vivos: ${countAlivePlayers(roomData)}. Eliminados: ${countEliminatedPlayers(roomData)}.`;
+          break;
+        case 'VOTING':
+          title.textContent = 'Votação';
+          subtitle.textContent = 'Todos escolhem quem deve ser eliminado.';
+          message.textContent = 'O narrador observa o processo de votação sem interagir.';
+          extra.textContent = 'A tensão aumenta à medida que os votos são contados.';
+          break;
+        case 'GAME_OVER':
+          title.textContent = 'Fim de Jogo';
+          subtitle.textContent = 'A partida chegou ao seu desfecho.';
+          message.textContent = getGameOverMessage(roomData);
+          extra.textContent = getWinnerLabel(roomData);
+          break;
+        default:
+          title.textContent = 'Aguardando partida';
+          subtitle.textContent = 'Conectado como espectador/narrador.';
+          message.textContent = 'Assim que o host iniciar o jogo, você verá as fases do fluxo da partida.';
+          extra.textContent = 'Acompanhe o estado atual e a lista de jogadores à direita.';
+          break;
+      }
+    }
+
+    function countAlivePlayers(roomData) {
+      const players = roomData.players || {};
+      const eliminated = roomData.eliminatedPlayers || roomData.gameState?.eliminatedPlayers || [];
+      const aliveList = Object.entries(players).filter(([playerId]) => {
+        return Array.isArray(eliminated) ? !eliminated.includes(playerId) : !(eliminated && eliminated[playerId]);
+      });
+      return aliveList.length;
+    }
+
+    function countEliminatedPlayers(roomData) {
+      const players = roomData.players || {};
+      const eliminated = roomData.eliminatedPlayers || roomData.gameState?.eliminatedPlayers || [];
+      if (Array.isArray(eliminated)) return eliminated.length;
+      if (!eliminated) return 0;
+      return Object.keys(eliminated).length;
+    }
+
+    function formatLastAction(lastAction, roomData) {
+      const actionMap = {
+        assassinKill: 'Um jogador foi atacado pelo Assassino durante a noite.',
+        traitorKill: 'O Traidor executou sua ação noturna.',
+        doctorSave: 'O Médico escolheu um jogador para salvar nesta noite.',
+        detectiveInvestigation: 'O Detetive investigou um jogador.',
+        voteCast: 'A votação está em andamento.',
+        voteComplete: 'A votação foi concluída e o resultado será anunciado.',
+        playerEliminated: 'Um jogador foi eliminado durante a rodada.'
+      };
+      return actionMap[lastAction] || lastAction || 'Aguardando próximo evento...';
+    }
+
+    function getAdditionalInfo(phase, roomData, aliveCount, eliminatedCount) {
+      const phaseKey = String(phase || '').toUpperCase();
+      if (phaseKey === 'ROLE_REVEAL') {
+        return 'Apenas o início da partida. Os papéis são distribuídos para os jogadores.';
+      }
+      if (phaseKey === 'DAY') {
+        return `Discussão pública com ${aliveCount} jogador(es) vivos. O jogo avança para votação em breve.`;
+      }
+      if (phaseKey === 'VOTING') {
+        return `Fique atento ao resultado da votação. ${aliveCount} jogador(es) ainda podem ser escolhidos.`;
+      }
+      if (phaseKey === 'GAME_OVER') {
+        return 'Partida encerrada. Reinicie ou retorne ao lobby quando houver um novo jogo.';
+      }
+      return `Jogadores vivos: ${aliveCount}, eliminados: ${eliminatedCount}.`;
+    }
+
+    function getGameOverMessage(roomData) {
+      const winner = roomData.gameState?.winner || roomData.winner || null;
+      if (winner === 'assassin') {
+        return 'O Assassino venceu a partida.';
+      }
+      if (winner === 'civilians' || winner === 'city' || winner === 'civis') {
+        return 'A cidade venceu a partida.';
+      }
+      return 'O jogo terminou. Verifique o estado da sala para mais detalhes.';
+    }
+
+    function getWinnerLabel(roomData) {
+      const winner = roomData.gameState?.winner || roomData.winner || null;
+      if (winner === 'assassin') return 'Vencedor: Assassino';
+      if (winner === 'civilians' || winner === 'city' || winner === 'civis') return 'Vencedores: Civis';
+      return 'Vencedores: Indefinido';
+    }
+
+    // Sair como espectador
+    window.leaveSpectator = function() {
+      if (unsubscribe && currentRoomRef) {
+        currentRoomRef.off('value', unsubscribe);
+      }
+      currentRoom = null;
+      currentRoomRef = null;
+      document.getElementById('spectator-join').style.display = 'grid';
+      document.getElementById('spectator-content').style.display = 'none';
+      document.getElementById('spectator-room-input').value = '';
+      document.getElementById('spectator-error').style.display = 'none';
+      unsubscribe = null;
+    };
+
+    // Limpeza ao sair
+    window.addEventListener('beforeunload', () => {
+      if (unsubscribe && currentRoomRef) {
+        currentRoomRef.off('value', unsubscribe);
+      }
+    });
+  </script>
+</body>
+</html>
