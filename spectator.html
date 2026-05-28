@@ -1,0 +1,1341 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>A Liar Within — Espectador</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    #spectator-join {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.95);
+      display: grid;
+      place-items: center;
+      z-index: 9999;
+    }
+    .spectator-join-box {
+      background: #222;
+      padding: 30px;
+      border-radius: 12px;
+      text-align: center;
+      max-width: 400px;
+      color: #fff;
+    }
+    .spectator-join-box h2 {
+      margin-bottom: 20px;
+      color: #ff9900;
+    }
+    .spectator-join-box input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #444;
+      background: #333;
+      color: #fff;
+      font-size: 16px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+    .spectator-join-box input::placeholder {
+      color: #666;
+    }
+    .spectator-join-box button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      background: #ff4444;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .spectator-join-box button:hover {
+      background: #ff6666;
+    }
+    .spectator-join-box button:disabled {
+      background: #666;
+      cursor: not-allowed;
+    }
+    .spectator-join-box .error {
+      color: #ff6666;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    .spectator-join-box .info {
+      color: #888;
+      font-size: 12px;
+      margin-top: 15px;
+    }
+    #spectator-content {
+      display: none;
+    }
+    .spectator-header {
+      background: #111;
+      padding: 15px;
+      text-align: center;
+      border-bottom: 2px solid #ff4444;
+    }
+    .spectator-header h1 {
+      margin: 0;
+      color: #ff9900;
+      font-size: 20px;
+    }
+    .spectator-header p {
+      margin: 5px 0 0;
+      color: #ccc;
+      font-size: 12px;
+    }
+    .spectator-main {
+      padding: 20px;
+      display: grid;
+      gap: 20px;
+    }
+    .spectator-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) 320px;
+      gap: 20px;
+    }
+    .spectator-stage {
+      background: linear-gradient(180deg, #151515 0%, #1f1f1f 100%);
+      border: 1px solid #333;
+      border-radius: 16px;
+      padding: 24px;
+      min-height: 360px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+    }
+    .spectator-stage::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top, rgba(255,153,0,0.14), transparent 38%);
+      pointer-events: none;
+    }
+    .spectator-stage-title {
+      margin: 0 0 10px;
+      font-size: 28px;
+      letter-spacing: 0.06em;
+      color: #ffb347;
+      text-transform: uppercase;
+    }
+    .spectator-stage-subtitle {
+      margin: 0 0 20px;
+      font-size: 16px;
+      color: #ccc;
+      line-height: 1.5;
+    }
+    .spectator-stage-message {
+      font-size: 18px;
+      color: #f5f5f5;
+      line-height: 1.7;
+      min-height: 120px;
+    }
+    .spectator-role-panel {
+      display: none;
+      margin-top: 20px;
+      padding: 18px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      gap: 14px;
+    }
+    .spectator-role-label {
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      color: #ffb347;
+      text-transform: uppercase;
+    }
+    .spectator-role-badge {
+      padding: 14px 18px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #fff;
+      font-size: 18px;
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: 0.14em;
+    }
+    .spectator-role-description {
+      color: #ddd;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    .spectator-screen-image {
+      display: none;
+      margin-top: 24px;
+      width: 100%;
+      min-height: 220px;
+      border-radius: 18px;
+      background-size: cover;
+      background-position: center;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+    }
+    .spectator-screen-image.visible {
+      display: block;
+    }
+    .spectator-stage-extra {
+      margin-top: 20px;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      color: #ddd;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .spectator-panel {
+      background: #222;
+      padding: 15px;
+      border-radius: 10px;
+      border: 1px solid #333;
+    }
+    .spectator-panel h3 {
+      color: #ff9900;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    #spectator-players {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    #spectator-players li {
+      padding: 10px 12px;
+      background: #1c1c1c;
+      margin: 6px 0;
+      border-radius: 8px;
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    #spectator-players li.eliminated {
+      opacity: 0.55;
+      color: #999;
+      text-decoration: line-through;
+    }
+    .spectator-status-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 68px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .spectator-status-badge.alive {
+      color: #a6ff8c;
+      background: rgba(166, 255, 140, 0.12);
+    }
+    .spectator-status-badge.eliminated {
+      color: #ff7f7f;
+      background: rgba(255, 127, 127, 0.12);
+    }
+    .spectator-event {
+      min-height: 120px;
+      color: #ddd;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+    .spectator-footer {
+      display: flex;
+      gap: 12px;
+      justify-content: stretch;
+      flex-wrap: wrap;
+    }
+    .spectator-footer button {
+      flex: 1 1 120px;
+      padding: 12px 14px;
+      border: none;
+      border-radius: 10px;
+      background: #ff4444;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .spectator-footer button:hover {
+      background: #ff6666;
+    }
+    /* Disable interactions inside the game screens for spectator (visual only) */
+    .no-interaction { pointer-events: none; }
+    .no-interaction button, .no-interaction input, .no-interaction select, .no-interaction .chat-input { pointer-events: none; }
+    .no-interaction button { opacity: 1; }
+  </style>
+</head>
+<body style="background:#1a1a1a;">
+  <!-- Modal de entrada -->
+  <div id="spectator-join" class="spectator-join-box" style="position:static;background:transparent;padding:0;grid-column:unset;place-items:unset;display:grid;min-height:100vh;">
+    <div class="spectator-join-box">
+      <h2>🎮 Espectador</h2>
+      <p style="color:#ccc;margin-bottom:20px;">Digite o código da sala para assistir</p>
+      
+      <input 
+        id="spectator-room-input" 
+        type="text" 
+        placeholder="Ex: ABCD1234"
+        autocomplete="off"
+        maxlength="8"
+      />
+      
+      <button id="spectator-join-btn" onclick="joinAsSpectator()">Entrar</button>
+      
+      <div class="error" id="spectator-error" style="display:none;"></div>
+      <div class="info">
+        💡 Código fornecido pelo host do jogo
+      </div>
+    </div>
+  </div>
+
+  <!-- Conteúdo do espectador -->
+  <div id="spectator-content" style="display:none;min-height:100vh;color:#fff;">
+    <div class="spectator-header">
+      <h1>🎮 A Liar Within — Espectador</h1>
+      <p>Modo: <strong>Narrador</strong> — Sala: <strong id="spectator-room-code">—</strong></p>
+    </div>
+
+    <div class="spectator-main">
+      <div class="spectator-grid">
+        <div class="spectator-stage">
+          <div class="spectator-stage-title" id="spectator-screen-title">Aguardando conexão...</div>
+          <div class="spectator-stage-subtitle" id="spectator-screen-subtitle">O espectador observa o fluxo da partida sem interagir.</div>
+          <div class="spectator-stage-message" id="spectator-screen-message">Quando o jogo começar, esta tela irá mostrar as fases e transições do jogo, como nos jogadores.</div>
+          <div class="spectator-role-panel" id="spectator-role-panel">
+            <div class="spectator-role-label">Seu papel</div>
+            <div class="spectator-role-badge" id="spectator-role-badge">NARRADOR</div>
+            <div class="spectator-role-description" id="spectator-role-description">Você observa como narrador e acompanha a partida em tempo real.</div>
+          </div>
+          <div class="spectator-screen-image" id="spectator-screen-image"></div>
+          <div class="spectator-stage-extra" id="spectator-screen-extra">Aguarde a primeira fase.</div>
+        </div>
+
+        <div>
+          <div class="spectator-panel">
+            <h3>👥 Jogadores</h3>
+            <div id="spectator-player-summary" class="spectator-stage-extra">Nenhum dado disponível ainda.</div>
+            <ul id="spectator-players"></ul>
+          </div>
+
+          <div class="spectator-panel">
+            <h3>📰 Narrativa</h3>
+            <div class="spectator-event" id="spectator-last-action">Acompanhe a ação do jogo ao vivo.</div>
+          </div>
+
+          <div class="spectator-panel">
+            <h3>📌 Detalhes</h3>
+            <div class="spectator-stage-extra" id="spectator-additional-info">Nenhuma informação adicional disponível.</div>
+          </div>
+        </div>
+      </div>
+
+        <!-- Game screens (copied from main game) - visual only for spectator -->
+        <div class="spectator-game-screens no-interaction">
+          <!-- Tela de Revelação de Role -->
+          <section class="role-reveal-screen hidden" id="role-reveal-screen">
+            <div class="role-reveal-bg" id="role-reveal-bg"></div>
+            <div class="role-reveal-content">
+              <div class="role-reveal-inner">
+                <div class="role-reveal-panel">
+                  <div class="role-reveal-title">Seu Role:</div>
+                  <div class="role-reveal-badge" id="role-badge">INOCENTE</div>
+                  <div class="role-reveal-description" id="role-description">Você é um civil. Trabalhe com sua equipe para encontrar o assassino.</div>
+                </div>
+              </div>
+              <button id="role-ready-button" class="role-ready-button">Pronto</button>
+            </div>
+          </section>
+
+          <!-- Tela de Noite -->
+          <section class="night-screen hidden" id="night-screen">
+            <div class="night-overlay"></div>
+            <div class="night-content">
+              <div class="night-title">A CIDADE DORME...</div>
+              <div class="night-message" id="night-message">Aguarde enquanto o ciclo noturno começa...</div>
+            </div>
+          </section>
+
+          <!-- Assassin / Traitor / Doctor / Detective screens (visual only) -->
+          <section class="assassin-screen hidden" id="assassin-screen">
+            <div class="night-overlay"></div>
+            <div class="assassin-content">
+              <div class="assassin-title">ASSASSINO</div>
+              <div class="assassin-subtitle">Escolha sua vítima:</div>
+              <div class="players-grid" id="assassin-players"></div>
+              <div class="assassin-buttons">
+                <button id="assassin-skip-button" class="assassin-skip-button">Não matar esta noite</button>
+                <button id="assassin-confirm-button" class="assassin-confirm-button" disabled>Confirmar</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="traitor-screen hidden" id="traitor-screen">
+            <div class="night-overlay"></div>
+            <div class="traitor-content">
+              <div class="traitor-title">TRAIDOR</div>
+              <div class="traitor-subtitle">Escolha sua vítima:</div>
+              <div class="players-grid" id="traitor-players"></div>
+              <div class="traitor-buttons">
+                <button id="traitor-skip-button" class="traitor-skip-button">Não matar esta noite</button>
+                <button id="traitor-confirm-button" class="traitor-confirm-button" disabled>Confirmar</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="doctor-screen hidden" id="doctor-screen">
+            <div class="night-overlay"></div>
+            <div class="doctor-bg" id="doctor-bg"></div>
+            <div class="doctor-content">
+              <div class="doctor-title">MÉDICO</div>
+              <div class="doctor-subtitle">Escolha quem salvar:</div>
+              <div class="players-grid" id="doctor-players"></div>
+              <div class="doctor-buttons">
+                <button id="doctor-skip-button" class="doctor-skip-button">Não salvar esta noite</button>
+                <button id="doctor-confirm-button" class="doctor-confirm-button" disabled>Confirmar</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="detective-screen hidden" id="detective-screen">
+            <div class="night-overlay"></div>
+            <div class="detective-bg" id="detective-bg"></div>
+            <div class="detective-content">
+              <div class="detective-title">DETETIVE</div>
+              <div class="detective-instruction" id="detective-instruction">Detetive, comece a investigação</div>
+              <div class="detective-options">
+                <button id="detective-word-test-button" class="detective-option-button">
+                  <div class="option-title">Teste da Palavra</div>
+                  <div class="option-desc">Todos recebem uma palavra, assassino uma similar</div>
+                </button>
+                <button id="detective-percentage-test-button" class="detective-option-button">
+                  <div class="option-title">Teste da Porcentagem</div>
+                  <div class="option-desc">Mostra suspeitas de assassinato por jogador</div>
+                </button>
+                <button id="detective-notify-button" class="detective-option-button">
+                  <div class="option-title">Notificar Investigação</div>
+                  <div class="option-desc">Notificar alguém que está sob suspeita</div>
+                </button>
+              </div>
+              <button id="detective-done-button" class="detective-done-button">Terminei</button>
+            </div>
+          </section>
+
+          <!-- Voting, death, day, chat, victory screens (visual only) -->
+          <section class="voting-screen hidden" id="voting-screen">
+            <div class="voting-bg"></div>
+            <div class="voting-content">
+              <div class="voting-title">VOTAÇÃO</div>
+              <div class="voting-subtitle">Quem deve sair?</div>
+              <div class="vote-counts" id="vote-counts"></div>
+              <div class="players-grid" id="voting-players"></div>
+              <div class="voting-buttons">
+                <button id="voting-confirm-button" class="voting-confirm-button" disabled>Confirmar Voto</button>
+                <button id="voting-skip-button" class="voting-skip-button">Continuar Discussão</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="death-notification-screen hidden" id="death-notification-screen">
+            <div class="notification-overlay"></div>
+            <div class="notification-content">
+              <div class="notification-title">ELIMINADO</div>
+              <div class="death-player-name" id="death-player-name">Nome do Jogador</div>
+              <div class="death-player-role" id="death-player-role">ERA O ASSASSINO</div>
+              <button id="death-continue-button" class="death-continue-button">Continuar para o lobby</button>
+            </div>
+          </section>
+
+          <section class="day-discussion-screen hidden" id="day-discussion-screen">
+            <div class="day-city-sky"></div>
+            <div class="day-city-buildings">
+              <div class="day-building"></div>
+              <div class="day-building"></div>
+              <div class="day-building"></div>
+              <div class="day-building"></div>
+              <div class="day-building"></div>
+            </div>
+            <div class="discussion-ui">
+              <div class="discussion-title">DISCUSSÃO DO DIA</div>
+              <div class="players-list-discussion" id="players-list-discussion"></div>
+              <div class="discussion-buttons">
+                <button id="continue-button" class="discussion-button">Continuar</button>
+                <button id="voting-button" class="discussion-button voting-action">Ir a Votos</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="chat-screen hidden" id="chat-screen">
+            <div class="chat-container">
+              <div class="chat-header" id="chat-header"><h2>CHAT DA CIDADE</h2></div>
+              <div class="chat-tabs">
+                <button class="chat-tab active" data-tab="public">Público</button>
+                <button class="chat-tab" data-tab="private" id="private-tab-button">Privado</button>
+              </div>
+              <div class="chat-tab-content active" id="chat-public">
+                <div class="chat-messages" id="public-messages"></div>
+                <div class="chat-input-area">
+                  <input type="text" id="public-message-input" class="chat-input" placeholder="Digite uma mensagem..." maxlength="200" />
+                  <button id="public-send-button" class="chat-send-btn">Enviar</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="victory-screen hidden" id="victory-screen">
+            <div class="victory-bg"></div>
+            <div class="victory-content">
+              <div class="victory-title" id="victory-title">CIVIS VENCEM</div>
+              <div class="victory-players-list" id="victory-players-list"></div>
+              <button id="victory-replay-button" class="victory-button">Voltar ao Lobby</button>
+            </div>
+          </section>
+
+        </div>
+
+        <div class="spectator-footer">
+          <button onclick="leaveSpectator()">Sair</button>
+        </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/12.12.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.12.1/firebase-database-compat.js"></script>
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBG4m7F2YEIPOduLGNniryltMNLXEtYnXQ",
+      authDomain: "a-liar-within-v3.firebaseapp.com",
+      databaseURL: "https://a-liar-within-v3-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "a-liar-within-v3",
+      storageBucket: "a-liar-within-v3.firebasestorage.app",
+      messagingSenderId: "170644517763",
+      appId: "1:170644517763:web:08e0a2912cfec9d460bcb6"
+    };
+
+    // Minimal translations copied from main game's `translations` to ensure text parity
+    const translations = {
+      pt: {
+        roleRevealTitle: 'Seu Role:',
+        roleRevealDescription: 'Você é um civil. Trabalhe com sua equipe para encontrar o assassino.',
+        nightTitle: 'A CIDADE DORME...',
+        nightMessage: 'Aguarde enquanto o ciclo noturno começa...',
+        assassinTitle: 'ASSASSINO',
+        assassinSubtitle: 'Escolha sua vítima:',
+        traitorTitle: 'TRAIDOR',
+        traitorSubtitle: 'Escolha sua vítima:',
+        doctorTitle: 'MÉDICO',
+        doctorSubtitle: 'Escolha quem salvar:',
+        detectiveTitle: 'DETETIVE',
+        detectiveInstruction: 'Detetive, comece a investigação',
+        votingTitle: 'VOTAÇÃO',
+        votingSubtitle: 'Quem deve sair?',
+        dayDiscussionTitle: 'DISCUSSÃO DO DIA',
+        victoryTitle: 'CIVIS VENCEM',
+        statusWaiting: 'Aguardando partida',
+        connectedAsSpectator: 'Conectado como espectador/narrador.'
+      },
+      en: {
+        roleRevealTitle: 'Your Role:',
+        roleRevealDescription: 'You are a civilian. Work with your team to find the assassin.',
+        nightTitle: 'THE CITY SLEEPS...',
+        nightMessage: 'Wait while the night cycle begins...',
+        assassinTitle: 'ASSASSIN',
+        assassinSubtitle: 'Choose your victim:',
+        traitorTitle: 'TRAITOR',
+        traitorSubtitle: 'Choose your victim:',
+        doctorTitle: 'DOCTOR',
+        doctorSubtitle: 'Choose who to save:',
+        detectiveTitle: 'DETECTIVE',
+        detectiveInstruction: 'Detective, start your investigation',
+        votingTitle: 'VOTING',
+        votingSubtitle: 'Who should leave?',
+        dayDiscussionTitle: 'DAY DISCUSSION',
+        victoryTitle: 'CIVILIANS WIN',
+        statusWaiting: 'Waiting for game',
+        connectedAsSpectator: 'Connected as spectator/narrator.'
+      }
+    };
+    let currentLanguage = localStorage.getItem('gameLanguage') || 'pt';
+    function t(key, vars) {
+      const raw = (translations[currentLanguage] && translations[currentLanguage][key]) || key;
+      if (!vars) return raw;
+      return Object.keys(vars).reduce((s,k)=> String(s).replace(new RegExp(`\\{${k}\\}`,'g'), vars[k]), raw);
+    }
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let currentRoom = null;
+    let currentRoomRef = null;
+    let unsubscribe = null;
+    let currentSpectatorPhase = null;
+    let nightMusic = null;
+    let roleMusic = null;
+    let dayMusic = null;
+    let lobbyMusic = null;
+    let votingMusic = null;
+    let assassinWinMusic = null;
+    let cityWinMusic = null;
+    let assassinWakeupAudio = null;
+    let doctorWakeupAudio = null;
+    let detectiveWakeupAudio = null;
+    let traitorWakeupAudio = null;
+    let traitorWarningAudio = null;
+    let votingAudio = null;
+    let dayAudio = null;
+    let eliminationAudio = null;
+    let nightAudio = null;
+    let audioPermissionGranted = false;
+
+    const AUDIO_PATHS = {
+      assassinWakeup: { pt: 'Narrator/AssassinWakeup.mp3', en: 'NarratorENGV/AssassinoAcorda.mp3' },
+      traitorWakeup: { pt: 'Narrator/TraitorWakeup.mp3', en: 'NarratorENGV/TraidorAcorda.mp3' },
+      traitorWarning: { pt: 'Narrator/TraitorWarning.mp3', en: 'NarratorENGV/AvisoTraidor.mp3' },
+      doctorWakeup: { pt: 'Narrator/DoctorWakeup.mp3', en: 'NarratorENGV/DoutorAcorda.mp3' },
+      detectiveWakeup: { pt: 'Narrator/DetectiveWakeup.mp3', en: 'NarratorENGV/DetetiveAcorda.mp3' },
+      voting: { pt: 'Narrator/Voting.mp3', en: 'NarratorENGV/Votação.mp3' },
+      day: { pt: 'Narrator/Day.mp3', en: 'NarratorENGV/Dia.mp3' },
+      elimination: { pt: 'Narrator/Elimination.mp3', en: 'NarratorENGV/Eliminação.mp3' },
+      night: { pt: 'Narrator/Night.mp3', en: 'NarratorENGV/Noite.mp3' }
+    };
+
+    function getAudioPath(audioName, language = 'pt') {
+      return AUDIO_PATHS[audioName]?.[language] || AUDIO_PATHS[audioName]?.['pt'] || audioName;
+    }
+
+    function createAudio(source, options = {}) {
+      const { loop = false, volume = 1, preload = 'auto' } = options;
+      const audio = new Audio();
+      audio.src = new URL(source, window.location.href).href;
+      audio.loop = loop;
+      audio.volume = volume;
+      audio.preload = preload;
+      audio.muted = false;
+      audio.addEventListener('error', (event) => {
+        console.warn(`⚠️ Falha ao carregar áudio: ${audio.src}`, event);
+      });
+      audio.load();
+      return audio;
+    }
+
+    function setupNightMusic() {
+      if (nightMusic) return;
+      nightMusic = new Audio('Music/NightPhase.mp3');
+      nightMusic.loop = true;
+      nightMusic.volume = 0.3;
+      nightMusic.preload = 'auto';
+      nightMusic.crossOrigin = 'anonymous';
+    }
+
+    function setupRoleMusic() {
+      if (roleMusic) return;
+      roleMusic = new Audio('Music/Roles.mp3');
+      roleMusic.loop = true;
+      roleMusic.volume = 0.4;
+      roleMusic.preload = 'auto';
+      roleMusic.crossOrigin = 'anonymous';
+    }
+
+    function setupDayMusic() {
+      if (dayMusic) return;
+      dayMusic = createAudio('Music/DayPhase.mp3', { loop: true, volume: 0.35, preload: 'auto' });
+    }
+
+    function setupLobbyMusic() {
+      if (lobbyMusic) return;
+      lobbyMusic = createAudio('Music/Looby.mp3', { loop: true, volume: 0.35, preload: 'auto' });
+    }
+
+    function setupVotingMusic() {
+      if (votingMusic) return;
+      votingMusic = createAudio('Music/VotingPhase.mp3', { loop: true, volume: 0.35, preload: 'auto' });
+    }
+
+    function setupAssassinWinMusic() {
+      if (assassinWinMusic) return;
+      assassinWinMusic = createAudio('Music/AssassinWin.mp3', { loop: false, volume: 0.5, preload: 'auto' });
+    }
+
+    function setupCityWinMusic() {
+      if (cityWinMusic) return;
+      cityWinMusic = new Audio('Music/CityWin.mp3');
+      cityWinMusic.loop = false;
+      cityWinMusic.volume = 0.5;
+      cityWinMusic.preload = 'auto';
+      cityWinMusic.crossOrigin = 'anonymous';
+    }
+
+    function reloadNarratorAudio() {
+      if (assassinWakeupAudio) assassinWakeupAudio.pause();
+      if (doctorWakeupAudio) doctorWakeupAudio.pause();
+      if (detectiveWakeupAudio) detectiveWakeupAudio.pause();
+      if (traitorWakeupAudio) traitorWakeupAudio.pause();
+      if (traitorWarningAudio) traitorWarningAudio.pause();
+      if (votingAudio) votingAudio.pause();
+      if (dayAudio) dayAudio.pause();
+      if (eliminationAudio) eliminationAudio.pause();
+      if (nightAudio) nightAudio.pause();
+      assassinWakeupAudio = null;
+      doctorWakeupAudio = null;
+      detectiveWakeupAudio = null;
+      traitorWakeupAudio = null;
+      traitorWarningAudio = null;
+      votingAudio = null;
+      dayAudio = null;
+      eliminationAudio = null;
+      nightAudio = null;
+    }
+
+    function setupAssassinWakeupAudio() {
+      if (assassinWakeupAudio) return;
+      const audioPath = getAudioPath('assassinWakeup', currentLanguage);
+      assassinWakeupAudio = createAudio(audioPath, { loop: false, volume: 0.8, preload: 'auto' });
+    }
+
+    function setupDoctorWakeupAudio() {
+      if (doctorWakeupAudio) return;
+      const audioPath = getAudioPath('doctorWakeup', currentLanguage);
+      doctorWakeupAudio = createAudio(audioPath, { loop: false, volume: 0.8, preload: 'auto' });
+    }
+
+    function setupDetectiveWakeupAudio() {
+      if (detectiveWakeupAudio) return;
+      const audioPath = getAudioPath('detectiveWakeup', currentLanguage);
+      detectiveWakeupAudio = createAudio(audioPath, { loop: false, volume: 0.8, preload: 'auto' });
+    }
+
+    function setupTraitorWakeupAudio() {
+      if (traitorWakeupAudio) return;
+      const audioPath = getAudioPath('traitorWakeup', currentLanguage);
+      traitorWakeupAudio = createAudio(audioPath, { loop: false, volume: 0.8, preload: 'auto' });
+    }
+
+    function setupTraitorWarningAudio() {
+      if (traitorWarningAudio) return;
+      const audioPath = getAudioPath('traitorWarning', currentLanguage);
+      traitorWarningAudio = createAudio(audioPath, { loop: false, volume: 0.8, preload: 'auto' });
+    }
+
+    function setupVotingAudio() {
+      if (votingAudio) return;
+      const audioPath = getAudioPath('voting', currentLanguage);
+      votingAudio = createAudio(audioPath, { loop: false, volume: 0.8, preload: 'auto' });
+    }
+
+    function setupDayAudio() {
+      if (dayAudio) return;
+      const audioPath = getAudioPath('day', currentLanguage);
+      dayAudio = createAudio(audioPath, { loop: false, volume: 0.8, preload: 'auto' });
+    }
+
+    function setupEliminationAudio() {
+      if (eliminationAudio) return;
+      const audioPath = getAudioPath('elimination', currentLanguage);
+      eliminationAudio = createAudio(audioPath, { loop: false, volume: 0.8, preload: 'auto' });
+    }
+
+    function setupNightAudio() {
+      if (nightAudio) return;
+      const audioPath = getAudioPath('night', currentLanguage);
+      nightAudio = createAudio(audioPath, { loop: false, volume: 0.8, preload: 'auto' });
+    }
+
+    function setupAllAudio() {
+      setupNightMusic();
+      setupRoleMusic();
+      setupDayMusic();
+      setupLobbyMusic();
+      setupVotingMusic();
+      setupAssassinWinMusic();
+      setupCityWinMusic();
+      setupAssassinWakeupAudio();
+      setupDoctorWakeupAudio();
+      setupDetectiveWakeupAudio();
+      setupTraitorWakeupAudio();
+      setupTraitorWarningAudio();
+      setupVotingAudio();
+      setupDayAudio();
+      setupEliminationAudio();
+      setupNightAudio();
+    }
+
+    function stopAllBackgroundMusic() {
+      [lobbyMusic, nightMusic, roleMusic, dayMusic, votingMusic, assassinWinMusic, cityWinMusic].forEach((audio) => {
+        if (!audio) return;
+        audio.pause();
+        audio.currentTime = 0;
+      });
+    }
+
+    function playMusic(audio) {
+      if (!audio) return;
+      stopAllBackgroundMusic();
+      audio.muted = false;
+      audio.currentTime = 0;
+      audio.load();
+      audio.play().catch((error) => {
+        console.warn('⚠️ Erro ao tocar música:', error);
+      });
+    }
+
+    function playOverlayAudio(overlayAudio, duckTarget = null, duckLevel = 0.15) {
+      if (!audioPermissionGranted || !overlayAudio) return;
+      if (!overlayAudio.src) {
+        console.warn('⚠️ playOverlayAudio abortado: overlayAudio não possui fonte definida');
+        return;
+      }
+
+      let savedVolume = null;
+      if (duckTarget && !duckTarget.paused) {
+        savedVolume = duckTarget.volume;
+        try { duckTarget.volume = duckLevel; } catch (err) { console.warn('⚠️ Não foi possível reduzir volume do duckTarget', err); }
+      }
+
+      overlayAudio.pause();
+      overlayAudio.currentTime = 0;
+      overlayAudio.muted = false;
+      overlayAudio.load();
+
+      const restore = () => {
+        try { if (savedVolume !== null && duckTarget) duckTarget.volume = savedVolume; } catch (err) { console.warn('⚠️ Erro ao restaurar volume:', err); }
+        overlayAudio.onended = null;
+      };
+
+      overlayAudio.onended = restore;
+      overlayAudio.play().catch((error) => {
+        console.warn('⚠️ Erro ao tocar overlay audio:', error);
+        if (savedVolume !== null && duckTarget) duckTarget.volume = savedVolume;
+        overlayAudio.onended = null;
+      });
+    }
+
+    function requestAudioPermission() {
+      if (audioPermissionGranted) return;
+      setupAllAudio();
+
+      const audioItems = [lobbyMusic, nightMusic, roleMusic, dayMusic, votingMusic, assassinWakeupAudio, doctorWakeupAudio, detectiveWakeupAudio, traitorWakeupAudio, traitorWarningAudio, votingAudio, dayAudio, eliminationAudio, nightAudio, assassinWinMusic, cityWinMusic].filter(Boolean);
+      if (audioItems.length === 0) return;
+
+      audioItems.forEach((audio) => {
+        audio.muted = false;
+        audio.currentTime = 0;
+      });
+
+      const primeAudio = audioItems[0];
+      primeAudio.play().then(() => {
+        audioPermissionGranted = true;
+        primeAudio.pause();
+        primeAudio.currentTime = 0;
+      }).catch((error) => {
+        console.warn('⚠️ Não foi possível ativar o som automaticamente:', error);
+      });
+    }
+
+    function playRoleMusic() {
+      setupRoleMusic();
+      playMusic(roleMusic);
+    }
+
+    function playNightMusic() {
+      setupNightMusic();
+      playMusic(nightMusic);
+    }
+
+    function playDayMusic() {
+      setupDayMusic();
+      playMusic(dayMusic);
+    }
+
+    function playLobbyMusic() {
+      setupLobbyMusic();
+      playMusic(lobbyMusic);
+    }
+
+    function playVotingMusic() {
+      setupVotingMusic();
+      playMusic(votingMusic);
+    }
+
+    function playAssassinWinMusic() {
+      setupAssassinWinMusic();
+      playMusic(assassinWinMusic);
+    }
+
+    function playCityWinMusic() {
+      setupCityWinMusic();
+      playMusic(cityWinMusic);
+    }
+
+    function playSpectatorPhaseAudio(phase, roomData) {
+      const phaseKey = String(phase || '').toUpperCase();
+      if (currentSpectatorPhase === phaseKey) return;
+      currentSpectatorPhase = phaseKey;
+      if (!audioPermissionGranted) {
+        requestAudioPermission();
+      }
+
+      switch (phaseKey) {
+        case 'ROLE_REVEAL':
+          playRoleMusic();
+          break;
+        case 'NIGHT':
+          playNightMusic();
+          setupNightAudio();
+          playOverlayAudio(nightAudio, nightMusic, 0.15);
+          break;
+        case 'ASSASSIN_TURN':
+          playNightMusic();
+          setupAssassinWakeupAudio();
+          playOverlayAudio(assassinWakeupAudio, nightMusic, 0.15);
+          break;
+        case 'TRAITOR_TURN':
+          playNightMusic();
+          setupTraitorWakeupAudio();
+          playOverlayAudio(traitorWakeupAudio, nightMusic, 0.15);
+          break;
+        case 'DOCTOR_TURN':
+          playNightMusic();
+          setupDoctorWakeupAudio();
+          playOverlayAudio(doctorWakeupAudio, nightMusic, 0.15);
+          break;
+        case 'DETECTIVE_TURN':
+          playNightMusic();
+          setupDetectiveWakeupAudio();
+          playOverlayAudio(detectiveWakeupAudio, nightMusic, 0.15);
+          break;
+        case 'VOTING':
+          playVotingMusic();
+          setupVotingAudio();
+          playOverlayAudio(votingAudio, votingMusic, 0.15);
+          break;
+        case 'DAY':
+          playDayMusic();
+          setupDayAudio();
+          playOverlayAudio(dayAudio, dayMusic, 0.15);
+          break;
+        case 'GAME_OVER':
+          const winner = (roomData?.gameState?.winner || roomData?.winner || '').toLowerCase();
+          if (winner === 'assassin' || winner === 'traitor') {
+            playAssassinWinMusic();
+          } else {
+            playCityWinMusic();
+          }
+          break;
+        default:
+          playLobbyMusic();
+          break;
+      }
+    }
+
+    // Extrair sala da URL
+    const params = new URLSearchParams(window.location.search);
+    const roomParam = params.get('room');
+
+    // Entrar como espectador
+    window.joinAsSpectator = async function() {
+      const roomCode = document.getElementById('spectator-room-input').value.toUpperCase().trim();
+      const errorDiv = document.getElementById('spectator-error');
+      const btn = document.getElementById('spectator-join-btn');
+
+      if (!roomCode || roomCode.length < 4) {
+        errorDiv.textContent = 'Digite um código válido';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Conectando...';
+      errorDiv.style.display = 'none';
+
+      try {
+        // Verificar se sala existe
+        const roomRef = db.ref(`rooms/${roomCode}`);
+        const snapshot = await roomRef.once('value');
+
+        if (!snapshot.exists()) {
+          errorDiv.textContent = 'Sala não encontrada';
+          errorDiv.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Entrar';
+          return;
+        }
+
+        currentRoom = roomCode;
+        document.getElementById('spectator-room-code').textContent = roomCode;
+        document.getElementById('spectator-join').style.display = 'none';
+        document.getElementById('spectator-content').style.display = 'block';
+
+        // Inicializar áudio igual ao jogo e começar a escutar a sala
+        setupAllAudio();
+        requestAudioPermission();
+        listenToRoom(roomCode);
+      } catch (e) {
+        console.error('Erro ao conectar:', e);
+        errorDiv.textContent = 'Erro ao conectar';
+        errorDiv.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Entrar';
+      }
+    };
+
+    // Permitir Enter para enviar
+    document.getElementById('spectator-room-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') window.joinAsSpectator();
+    });
+
+    // Auto-entrar se o room for passado na querystring
+    if (roomParam) {
+      document.getElementById('spectator-room-input').value = roomParam.toUpperCase();
+      // Pequeno delay para garantir que handlers estão prontos
+      setTimeout(() => {
+        window.joinAsSpectator();
+      }, 200);
+    }
+
+    function listenToRoom(roomCode) {
+      const roomRef = db.ref(`rooms/${roomCode}`);
+      
+      if (unsubscribe && currentRoomRef) {
+        currentRoomRef.off('value', unsubscribe);
+      }
+      
+      unsubscribe = (snapshot) => {
+        const roomData = snapshot.val();
+        if (!roomData) return;
+
+        renderSpectatorView(roomData);
+      };
+
+      currentRoomRef = roomRef;
+      roomRef.on('value', unsubscribe);
+    }
+
+    function renderSpectatorView(roomData) {
+      const phase = (roomData.gameState && (roomData.gameState.phase || roomData.gameState.currentPhase)) || 'AGUARDANDO';
+      renderSpectatorPhase(phase, roomData);
+      playSpectatorPhaseAudio(phase, roomData);
+
+      const players = roomData.players || {};
+      const eliminated = roomData.eliminatedPlayers || roomData.gameState?.eliminatedPlayers || [];
+      const playersList = document.getElementById('spectator-players');
+      playersList.innerHTML = '';
+
+      const playerEntries = Object.entries(players);
+      const alivePlayers = [];
+      const eliminatedPlayers = [];
+
+      playerEntries.forEach(([playerId, player]) => {
+        const name = player?.name || playerId;
+        const isEliminated = Array.isArray(eliminated)
+          ? eliminated.includes(playerId)
+          : eliminated && eliminated[playerId];
+
+        const li = document.createElement('li');
+        li.textContent = name;
+        const badge = document.createElement('span');
+        badge.className = `spectator-status-badge ${isEliminated ? 'eliminated' : 'alive'}`;
+        badge.textContent = isEliminated ? 'Eliminado' : 'Vivo';
+        li.appendChild(badge);
+
+        if (isEliminated) {
+          li.classList.add('eliminated');
+          eliminatedPlayers.push(name);
+        } else {
+          alivePlayers.push(name);
+        }
+
+        playersList.appendChild(li);
+      });
+
+      const summary = document.getElementById('spectator-player-summary');
+      summary.textContent = `${alivePlayers.length} vivos, ${eliminatedPlayers.length} eliminados.`;
+
+      const lastAction = (roomData.gameState && roomData.gameState.lastAction) || 'Aguardando próximo evento...';
+      document.getElementById('spectator-last-action').textContent = formatLastAction(lastAction, roomData);
+
+      const additionalInfo = document.getElementById('spectator-additional-info');
+      additionalInfo.textContent = getAdditionalInfo(phase, roomData, alivePlayers.length, eliminatedPlayers.length);
+
+      // Render public chat messages for spectator (visible during DAY)
+      try {
+        const publicMessagesDiv = document.getElementById('public-messages');
+        const publicMessages = roomData.chat && roomData.chat.public ? roomData.chat.public : {};
+        if (publicMessagesDiv) {
+          publicMessagesDiv.innerHTML = '';
+          const msgs = Object.values(publicMessages || {}).sort((a,b) => (a.ts||0) - (b.ts||0));
+          msgs.forEach(m => {
+            const el = document.createElement('div');
+            el.className = 'spectator-chat-msg';
+            const sender = m.sender || m.name || m.player || 'Anon';
+            const text = m.text || m.message || '';
+            el.innerHTML = `<div style="font-weight:700;color:#ffd700;margin-bottom:4px;">${escapeHtml(sender)}</div><div style="color:#eee;">${escapeHtml(text)}</div>`;
+            publicMessagesDiv.appendChild(el);
+          });
+        }
+      } catch (e) {
+        console.error('Erro ao renderizar chat público do espectador:', e);
+      }
+    }
+
+    function renderSpectatorPhase(phase, roomData) {
+      const title = document.getElementById('spectator-screen-title');
+      const subtitle = document.getElementById('spectator-screen-subtitle');
+      const message = document.getElementById('spectator-screen-message');
+      const extra = document.getElementById('spectator-screen-extra');
+      const rolePanel = document.getElementById('spectator-role-panel');
+      const roleBadge = document.getElementById('spectator-role-badge');
+      const roleDescription = document.getElementById('spectator-role-description');
+      const screenImage = document.getElementById('spectator-screen-image');
+
+      const phaseKey = String(phase || '').toUpperCase();
+      const showRolePanel = phaseKey === 'ROLE_REVEAL';
+
+      rolePanel.style.display = showRolePanel ? 'grid' : 'none';
+      if (showRolePanel) {
+        roleBadge.textContent = 'narrador';
+        if (roleDescription) roleDescription.style.display = 'none';
+        const roleBg = document.getElementById('role-reveal-bg');
+        if (roleBg) {
+          roleBg.style.backgroundImage = "url('gameart/Looby.jpeg')";
+          roleBg.style.opacity = '0.25';
+        }
+      } else {
+        if (roleDescription) {
+          roleDescription.style.display = '';
+          roleDescription.textContent = '';
+        }
+        const roleBg = document.getElementById('role-reveal-bg');
+        if (roleBg) roleBg.style.backgroundImage = '';
+      }
+
+      if (screenImage) {
+        screenImage.classList.remove('visible');
+        screenImage.style.backgroundImage = '';
+      }
+
+      // Show/hide main game screens to match player view (visual-only)
+      const screens = {
+        role: document.getElementById('role-reveal-screen'),
+        night: document.getElementById('night-screen'),
+        assassin: document.getElementById('assassin-screen'),
+        traitor: document.getElementById('traitor-screen'),
+        doctor: document.getElementById('doctor-screen'),
+        detective: document.getElementById('detective-screen'),
+        voting: document.getElementById('voting-screen'),
+        death: document.getElementById('death-notification-screen'),
+        day: document.getElementById('day-discussion-screen'),
+        chat: document.getElementById('chat-screen'),
+        victory: document.getElementById('victory-screen')
+      };
+      Object.values(screens).forEach(s => { if (s) s.classList.add('hidden'); });
+      const phaseToScreen = {
+        'ROLE_REVEAL': 'role',
+        'NIGHT': 'night',
+        'ASSASSIN_TURN': 'assassin',
+        'TRAITOR_TURN': 'traitor',
+        'DOCTOR_TURN': 'doctor',
+        'DETECTIVE_TURN': 'detective',
+        'VOTING': 'voting',
+        'DAY': 'day',
+        'GAME_OVER': 'victory'
+      };
+      const screenKey = phaseToScreen[phaseKey];
+      if (screenKey && screens[screenKey]) screens[screenKey].classList.remove('hidden');
+
+      switch (phaseKey) {
+        case 'ROLE_REVEAL':
+          title.textContent = t('roleRevealTitle');
+          subtitle.textContent = t('roleRevealDescription');
+          message.textContent = t('roleRevealDescription');
+          extra.textContent = '';
+          break;
+        case 'NIGHT':
+          title.textContent = t('nightTitle');
+          subtitle.textContent = t('nightMessage');
+          message.textContent = t('nightMessage');
+          extra.textContent = '';
+          break;
+        case 'VOTING':
+          renderVoteCounts(roomData);
+          title.textContent = t('votingTitle');
+          subtitle.textContent = t('votingSubtitle');
+          message.textContent = '';
+          extra.textContent = '';
+          break;
+        case 'ASSASSIN_TURN':
+          title.textContent = t('assassinTitle');
+          subtitle.textContent = t('assassinSubtitle');
+          message.textContent = '';
+          extra.textContent = `Jogadores vivos: ${countAlivePlayers(roomData)}.`;
+          break;
+        case 'TRAITOR_TURN':
+          title.textContent = t('traitorTitle');
+          subtitle.textContent = t('traitorSubtitle');
+          message.textContent = '';
+          extra.textContent = '';
+          break;
+        case 'DOCTOR_TURN':
+          title.textContent = t('doctorTitle');
+          subtitle.textContent = t('doctorSubtitle');
+          message.textContent = '';
+          extra.textContent = '';
+          break;
+        case 'DETECTIVE_TURN':
+          title.textContent = t('detectiveTitle');
+          subtitle.textContent = t('detectiveInstruction');
+          message.textContent = '';
+          extra.textContent = '';
+          break;
+        case 'DAY':
+          title.textContent = t('dayDiscussionTitle');
+          subtitle.textContent = t('dayDiscussionTitle');
+          message.textContent = '';
+          extra.textContent = `Vivos: ${countAlivePlayers(roomData)}. Eliminados: ${countEliminatedPlayers(roomData)}.`;
+          break;
+        case 'GAME_OVER':
+          title.textContent = t('victoryTitle');
+          subtitle.textContent = '';
+          message.textContent = getGameOverMessage(roomData);
+          extra.textContent = getWinnerLabel(roomData);
+          break;
+        default:
+          title.textContent = t('statusWaiting');
+          subtitle.textContent = t('connectedAsSpectator');
+          message.textContent = 'Assim que o host iniciar o jogo, você verá as fases do fluxo da partida.';
+          extra.textContent = '';
+          break;
+      }
+    }
+
+    function renderVoteCounts(roomData) {
+      const votes = roomData.votes || roomData.gameState?.votes || {};
+      const players = roomData.players || {};
+      const counts = {};
+      Object.values(votes).forEach(targetId => {
+        if (!targetId) return;
+        counts[targetId] = (counts[targetId] || 0) + 1;
+      });
+
+      const votesContainer = document.getElementById('vote-counts');
+      const votingPlayersGrid = document.getElementById('voting-players');
+      if (votesContainer) {
+        votesContainer.innerHTML = '';
+        Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([playerId, count]) => {
+          const name = (players[playerId] && players[playerId].name) || playerId;
+          const voteItem = document.createElement('div');
+          voteItem.innerHTML = `<strong>${name}:</strong> ${count} ${count===1? 'voto':'votos'}`;
+          votesContainer.appendChild(voteItem);
+        });
+      }
+
+      if (votingPlayersGrid) {
+        votingPlayersGrid.innerHTML = '';
+        Object.entries(players).forEach(([playerId, p]) => {
+          const name = p?.name || playerId;
+          const count = counts[playerId] || 0;
+          const li = document.createElement('div');
+          li.className = 'player-vote-item';
+          li.innerHTML = `<div style="display:flex;justify-content:space-between;gap:12px;padding:8px;background:rgba(255,255,255,0.02);border-radius:8px;margin-bottom:6px;"><span>${name}</span><strong>${count}</strong></div>`;
+          votingPlayersGrid.appendChild(li);
+        });
+      }
+    }
+
+    function countAlivePlayers(roomData) {
+      const players = roomData.players || {};
+      const eliminated = roomData.eliminatedPlayers || roomData.gameState?.eliminatedPlayers || [];
+      const aliveList = Object.entries(players).filter(([playerId]) => {
+        return Array.isArray(eliminated) ? !eliminated.includes(playerId) : !(eliminated && eliminated[playerId]);
+      });
+      return aliveList.length;
+    }
+
+    function countEliminatedPlayers(roomData) {
+      const players = roomData.players || {};
+      const eliminated = roomData.eliminatedPlayers || roomData.gameState?.eliminatedPlayers || [];
+      if (Array.isArray(eliminated)) return eliminated.length;
+      if (!eliminated) return 0;
+      return Object.keys(eliminated).length;
+    }
+
+    function formatLastAction(lastAction, roomData) {
+      const actionMap = {
+        assassinKill: 'Um jogador foi atacado pelo Assassino durante a noite.',
+        traitorKill: 'O Traidor executou sua ação noturna.',
+        doctorSave: 'O Médico escolheu um jogador para salvar nesta noite.',
+        detectiveInvestigation: 'O Detetive investigou um jogador.',
+        voteCast: 'A votação está em andamento.',
+        voteComplete: 'A votação foi concluída e o resultado será anunciado.',
+        playerEliminated: 'Um jogador foi eliminado durante a rodada.'
+      };
+      return actionMap[lastAction] || lastAction || 'Aguardando próximo evento...';
+    }
+
+    function getAdditionalInfo(phase, roomData, aliveCount, eliminatedCount) {
+      const phaseKey = String(phase || '').toUpperCase();
+      if (phaseKey === 'ROLE_REVEAL') {
+        return 'Apenas o início da partida. Os papéis são distribuídos para os jogadores.';
+      }
+      if (phaseKey === 'DAY') {
+        return `Discussão pública com ${aliveCount} jogador(es) vivos. O jogo avança para votação em breve.`;
+      }
+      if (phaseKey === 'VOTING') {
+        return `Fique atento ao resultado da votação. ${aliveCount} jogador(es) ainda podem ser escolhidos.`;
+      }
+      if (phaseKey === 'GAME_OVER') {
+        return 'Partida encerrada. Reinicie ou retorne ao lobby quando houver um novo jogo.';
+      }
+      return `Jogadores vivos: ${aliveCount}, eliminados: ${eliminatedCount}.`;
+    }
+
+    function getGameOverMessage(roomData) {
+      const winner = roomData.gameState?.winner || roomData.winner || null;
+      if (winner === 'assassin') {
+        return 'O Assassino venceu a partida.';
+      }
+      if (winner === 'civilians' || winner === 'city' || winner === 'civis') {
+        return 'A cidade venceu a partida.';
+      }
+      return 'O jogo terminou. Verifique o estado da sala para mais detalhes.';
+    }
+
+    function getWinnerLabel(roomData) {
+      const winner = roomData.gameState?.winner || roomData.winner || null;
+      if (winner === 'assassin') return 'Vencedor: Assassino';
+      if (winner === 'civilians' || winner === 'city' || winner === 'civis') return 'Vencedores: Civis';
+      return 'Vencedores: Indefinido';
+    }
+
+    function escapeHtml(s) {
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
+    // Sair como espectador
+    window.leaveSpectator = function() {
+      if (unsubscribe && currentRoomRef) {
+        currentRoomRef.off('value', unsubscribe);
+      }
+      currentRoom = null;
+      currentRoomRef = null;
+      document.getElementById('spectator-join').style.display = 'grid';
+      document.getElementById('spectator-content').style.display = 'none';
+      document.getElementById('spectator-room-input').value = '';
+      document.getElementById('spectator-error').style.display = 'none';
+      unsubscribe = null;
+    };
+
+    // Limpeza ao sair
+    window.addEventListener('beforeunload', () => {
+      if (unsubscribe && currentRoomRef) {
+        currentRoomRef.off('value', unsubscribe);
+      }
+    });
+  </script>
+</body>
+</html>
